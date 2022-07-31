@@ -504,6 +504,7 @@ RCT_EXPORT_METHOD(getTotalMemory:(RCTPromiseResolveBlock)resolve rejecter:(RCTPr
         NSNumber *fileSystemSizeInBytes = [storage objectForKey: NSFileSystemSize];
         totalSpace = [fileSystemSizeInBytes unsignedLongLongValue];
     }
+    NSLog(@"totalSpace %f" , (double) totalSpace);
     return (double) totalSpace;
 }
 
@@ -515,23 +516,25 @@ RCT_EXPORT_METHOD(getTotalDiskCapacity:(RCTPromiseResolveBlock)resolve rejecter:
     resolve(@(self.getTotalDiskCapacity));
 }
 
-- (double) getFreeDiskStorage {
-    uint64_t freeSpace = 0;
-    NSDictionary *storage = [self getStorageDictionary];
-
-    if (storage) {
-        NSNumber *freeFileSystemSizeInBytes = [storage objectForKey: NSFileSystemFreeSize];
-        freeSpace = [freeFileSystemSizeInBytes unsignedLongLongValue];
+- (NSString *) getFreeDiskStorage {
+    NSURL *fileURL = [[NSURL alloc] initFileURLWithPath:@"/"];
+    NSError *error = nil;
+    NSDictionary *results = [fileURL resourceValuesForKeys:@[NSURLVolumeAvailableCapacityForImportantUsageKey] error:&error];
+    if (!results) {
+        NSLog(@"Error retrieving resource keys: %@\n%@", [error localizedDescription], [error userInfo]);
+        abort();
     }
-    return (double) freeSpace;
+    NSLog(@"Available capacity for important usage: %@", results[NSURLVolumeAvailableCapacityForImportantUsageKey]);
+
+    return results[NSURLVolumeAvailableCapacityForImportantUsageKey];
 }
 
 RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(getFreeDiskStorageSync) {
-    return @(self.getFreeDiskStorage);
+    return self.getFreeDiskStorage;
 }
 
 RCT_EXPORT_METHOD(getFreeDiskStorage:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
-    resolve(@(self.getFreeDiskStorage));
+    resolve(self.getFreeDiskStorage);
 }
 
 - (NSString *) getDeviceTypeName {
